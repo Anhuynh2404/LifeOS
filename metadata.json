@@ -1,0 +1,6 @@
+{
+  "name": "LifeOS",
+  "description": "Siêu ứng dụng quản lý cuộc sống với 5 phân hệ liên kết dữ liệu chặt chẽ: Báo thức thông minh, Lịch biểu năng lượng, Quản lý tài chính, Mục tiêu và Thử thách cá nhân.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

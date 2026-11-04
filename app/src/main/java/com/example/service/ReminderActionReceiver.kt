@@ -23,6 +23,7 @@ class ReminderActionReceiver : BroadcastReceiver() {
         const val ACTION_DEBT_PAID = "com.example.lifeos.ACTION_DEBT_PAID"
         const val ACTION_SNOOZE_10MIN = "com.example.lifeos.ACTION_SNOOZE_10MIN"
         const val ACTION_TASK_COMPLETE = "com.example.lifeos.ACTION_TASK_COMPLETE"
+        const val ACTION_CHECKIN_STREAK = "com.example.lifeos.ACTION_CHECKIN_STREAK"
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -149,6 +150,25 @@ class ReminderActionReceiver : BroadcastReceiver() {
                     }
                 }
                 Toast.makeText(context, "🎉 Đã hoàn thành nhiệm vụ! +25 XP", Toast.LENGTH_SHORT).show()
+            }
+
+            ACTION_CHECKIN_STREAK -> {
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        val userPrefsRepo = com.example.data.preferences.UserPreferencesRepository(context)
+                        val (success, newStreak) = userPrefsRepo.checkInStreak()
+                        CoroutineScope(Dispatchers.Main).launch {
+                            if (success) {
+                                Toast.makeText(context, "🔥 Điểm danh thành công! Chuỗi ngày: $newStreak ngày (+50 XP, +20 Xu)", Toast.LENGTH_LONG).show()
+                            } else {
+                                Toast.makeText(context, "✨ Hôm nay bạn đã điểm danh rồi!", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        PersistentStatusService.refresh(context)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
             }
         }
     }

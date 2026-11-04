@@ -53,19 +53,21 @@ fun LifeCard(
         }
         LifeCardVariant.ELEVATED -> {
             Modifier
-                .shadow(elevation = 6.dp, shape = resolvedShape, spotColor = Color.Black.copy(alpha = 0.08f))
+                .shadow(elevation = 4.dp, shape = resolvedShape, spotColor = Color.Black.copy(alpha = 0.06f))
                 .then(baseModifier)
                 .background(colors.surfaceElevated)
-                .border(1.dp, colors.borderLight, resolvedShape)
+                .border(1.dp, colors.border, resolvedShape)
         }
         LifeCardVariant.GRADIENT -> {
             val brush = gradient ?: colors.brandGradient
-            baseModifier.background(brush)
+            baseModifier
+                .background(brush)
+                .border(1.dp, Color.White.copy(alpha = 0.28f), resolvedShape)
         }
         LifeCardVariant.GLASS -> {
             baseModifier
                 .background(colors.surface.copy(alpha = if (colors.isDark) 0.65f else 0.85f))
-                .border(1.dp, colors.border.copy(alpha = 0.5f), resolvedShape)
+                .border(1.dp, colors.border, resolvedShape)
         }
     }
 

@@ -33,7 +33,7 @@ object LifeTheme {
 
 @Composable
 fun LifeOSTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val lifeColors = if (darkTheme) DarkLifeColors else LightLifeColors

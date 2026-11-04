@@ -475,7 +475,7 @@ fun BankLoanCard(
                     .fillMaxWidth()
                     .clip(LifeTheme.shapes.small)
                     .background(colors.surfaceElevated.copy(alpha = 0.6f))
-                    .border(0.5.dp, colors.border.copy(alpha = 0.3f), LifeTheme.shapes.small)
+                    .border(1.dp, colors.border, LifeTheme.shapes.small)
                     .padding(10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -1078,7 +1078,7 @@ fun LoanRepaymentsHistoryDialog(
                                 .fillMaxWidth()
                                 .clip(LifeTheme.shapes.small)
                                 .background(colors.surface)
-                                .border(0.5.dp, colors.border.copy(alpha = 0.3f), LifeTheme.shapes.small)
+                                .border(1.dp, colors.border, LifeTheme.shapes.small)
                                 .padding(10.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically

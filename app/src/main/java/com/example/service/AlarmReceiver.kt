@@ -32,6 +32,7 @@ class AlarmReceiver : BroadcastReceiver() {
                 putExtra("alarm_id", alarm.id)
                 putExtra("alarm_title", alarm.title)
                 putExtra("mission_type", alarm.missionType)
+                putExtra("ringtone_name", alarm.ringtoneName)
             }
 
             val operationPendingIntent = PendingIntent.getBroadcast(
@@ -140,11 +141,13 @@ class AlarmReceiver : BroadcastReceiver() {
         val alarmId = intent.getLongExtra("alarm_id", 0L)
         val alarmTitle = intent.getStringExtra("alarm_title") ?: "Báo thức LifeOS"
         val missionType = intent.getStringExtra("mission_type") ?: "MATH"
+        val ringtoneName = intent.getStringExtra("ringtone_name") ?: "Tiếng chuông bình minh"
 
         val serviceIntent = Intent(context, AlarmService::class.java).apply {
             putExtra("alarm_id", alarmId)
             putExtra("alarm_title", alarmTitle)
             putExtra("mission_type", missionType)
+            putExtra("ringtone_name", ringtoneName)
         }
 
         ContextCompat.startForegroundService(context, serviceIntent)

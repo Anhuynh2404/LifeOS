@@ -2,6 +2,8 @@ package com.example.designsystem.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
@@ -42,28 +44,31 @@ fun LifeDialog(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp)
+                .padding(horizontal = 20.dp, vertical = 24.dp)
+                .imePadding()
                 .clip(shapes.dialog)
                 .background(colors.surface)
                 .border(1.dp, colors.border, shapes.dialog)
                 .testTag(testTag)
-                .padding(24.dp)
+                .padding(20.dp)
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 640.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 if (icon != null) {
                     Box(
                         modifier = Modifier
-                            .size(52.dp)
+                            .size(48.dp)
                             .clip(CircleShape)
                             .background(if (destructive) colors.errorSurface else colors.brandSurface),
                         contentAlignment = Alignment.Center
                     ) {
                         icon()
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
 
                 Text(
@@ -73,12 +78,21 @@ fun LifeDialog(
                     textAlign = TextAlign.Center
                 )
 
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Scrollable container for dialog content
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f, fill = false)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    content()
+                }
+
                 Spacer(modifier = Modifier.height(16.dp))
 
-                content()
-
-                Spacer(modifier = Modifier.height(24.dp))
-
+                // Pinned action buttons footer - guaranteed visible on all devices
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)

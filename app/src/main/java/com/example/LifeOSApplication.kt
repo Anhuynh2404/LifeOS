@@ -30,9 +30,14 @@ class LifeOSApplication : Application() {
         ruleEngine = RuleEngine(database, userPreferences)
         eventBus = LifeEventBus(ruleEngine)
 
-        // Seed realistic demo data
+        // Seed realistic starter data
         CoroutineScope(Dispatchers.IO).launch {
             DatabaseSeeder.seedIfEmpty(database)
+            try {
+                com.example.service.PersistentStatusService.startService(this@LifeOSApplication)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 }

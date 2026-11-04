@@ -73,12 +73,16 @@ class AlarmService : Service() {
         val alarmTitle = intent?.getStringExtra("alarm_title") ?: "Báo thức LifeOS"
         val alarmId = intent?.getLongExtra("alarm_id", 0L) ?: 0L
         val missionType = intent?.getStringExtra("mission_type") ?: "MATH"
+        val ringtoneName = intent?.getStringExtra("ringtone_name") ?: "Tiếng chuông bình minh"
 
         // Mark ringing state in persistent storage
         val prefs = getSharedPreferences(PREFS_ALARM_STATE, Context.MODE_PRIVATE)
         prefs.edit()
             .putBoolean(KEY_IS_RINGING, true)
             .putLong(KEY_CURRENT_ALARM_ID, alarmId)
+            .putString("alarm_title", alarmTitle)
+            .putString("mission_type", missionType)
+            .putString("ringtone_name", ringtoneName)
             .putLong("ringing_since", System.currentTimeMillis())
             .apply()
 
@@ -99,11 +103,11 @@ class AlarmService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // 2. Build ongoing, non-dismissible notification with fullScreenIntent
+        // 2. Build ongoing, non-dismissible notification with fullScreenIntent (cannot be swiped away!)
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle("⏰ $alarmTitle")
-            .setContentText("Chuông đang reo! Chạm để làm nhiệm vụ tắt chuông.")
+            .setContentText("Chuông đang reo! Chạm để giải nhiệm vụ tắt chuông.")
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
@@ -117,6 +121,7 @@ class AlarmService : Service() {
                 pendingRingingIntent
             )
             .build()
+        notification.flags = notification.flags or Notification.FLAG_ONGOING_EVENT or Notification.FLAG_NO_CLEAR
 
         startForeground(NOTIFICATION_ID, notification)
 
@@ -129,8 +134,8 @@ class AlarmService : Service() {
             e.printStackTrace()
         }
 
-        // 4. Start audio and intermittent vibration
-        ToneGenerator.playAlarm(onLoop = true)
+        // 4. Start audio with selected ringtone and intermittent vibration
+        ToneGenerator.playAlarmWithRingtone(this, ringtoneName, onLoop = true)
         startVibration()
 
         return START_STICKY

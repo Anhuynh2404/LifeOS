@@ -19,10 +19,11 @@ data class UserPreferences(
     val coins: Int,
     val spinTickets: Int,
     val activeStreakDays: Int,
-    val demoSimulateCamera: Boolean,
-    val demoSimulateSensors: Boolean,
-    val demoSimulateAppBlocker: Boolean,
-    val demoFastForwardHours: Int
+    val lastCheckInDate: String = "",
+    val demoSimulateCamera: Boolean = false,
+    val demoSimulateSensors: Boolean = false,
+    val demoSimulateAppBlocker: Boolean = false,
+    val demoFastForwardHours: Int = 0
 )
 
 class UserPreferencesRepository(private val context: Context) {
@@ -36,6 +37,7 @@ class UserPreferencesRepository(private val context: Context) {
         val KEY_COINS = intPreferencesKey("user_coins")
         val KEY_SPIN_TICKETS = intPreferencesKey("spin_tickets")
         val KEY_STREAK_DAYS = intPreferencesKey("active_streak_days")
+        val KEY_LAST_CHECKIN_DATE = stringPreferencesKey("last_checkin_date")
         val KEY_SIMULATE_CAMERA = booleanPreferencesKey("demo_simulate_camera")
         val KEY_SIMULATE_SENSORS = booleanPreferencesKey("demo_simulate_sensors")
         val KEY_SIMULATE_APP_BLOCKER = booleanPreferencesKey("demo_simulate_app_blocker")
@@ -53,6 +55,7 @@ class UserPreferencesRepository(private val context: Context) {
             coins = prefs[KEY_COINS] ?: 100,
             spinTickets = prefs[KEY_SPIN_TICKETS] ?: 1,
             activeStreakDays = prefs[KEY_STREAK_DAYS] ?: 0,
+            lastCheckInDate = prefs[KEY_LAST_CHECKIN_DATE] ?: "",
             demoSimulateCamera = prefs[KEY_SIMULATE_CAMERA] ?: false,
             demoSimulateSensors = prefs[KEY_SIMULATE_SENSORS] ?: false,
             demoSimulateAppBlocker = prefs[KEY_SIMULATE_APP_BLOCKER] ?: false,
@@ -67,6 +70,45 @@ class UserPreferencesRepository(private val context: Context) {
             prefs[KEY_ENERGY_PROFILE] = energy
             prefs[KEY_IS_ONBOARDED] = true
         }
+    }
+
+    suspend fun checkInStreak(): Pair<Boolean, Int> {
+        var isSuccess = false
+        var currentStreak = 0
+        val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
+
+        context.dataStore.edit { prefs ->
+            val lastDate = prefs[KEY_LAST_CHECKIN_DATE] ?: ""
+            val streak = prefs[KEY_STREAK_DAYS] ?: 0
+
+            if (lastDate == today) {
+                isSuccess = false
+                currentStreak = streak
+            } else {
+                val newStreak = streak + 1
+                prefs[KEY_STREAK_DAYS] = newStreak
+                prefs[KEY_LAST_CHECKIN_DATE] = today
+
+                // Reward XP & Coins for check-in (+50 XP, +20 Xu)
+                val currentXp = prefs[KEY_XP] ?: 0
+                val currentLevel = prefs[KEY_LEVEL] ?: 1
+                val currentCoins = prefs[KEY_COINS] ?: 100
+
+                val newTotalXp = currentXp + 50
+                val xpNeeded = currentLevel * 100
+                if (newTotalXp >= xpNeeded) {
+                    prefs[KEY_LEVEL] = currentLevel + 1
+                    prefs[KEY_XP] = newTotalXp - xpNeeded
+                } else {
+                    prefs[KEY_XP] = newTotalXp
+                }
+                prefs[KEY_COINS] = currentCoins + 20
+
+                isSuccess = true
+                currentStreak = newStreak
+            }
+        }
+        return Pair(isSuccess, currentStreak)
     }
 
     suspend fun addXpAndCoins(xpGained: Int, coinsGained: Int) {
@@ -129,6 +171,7 @@ class UserPreferencesRepository(private val context: Context) {
 
     suspend fun resetToCleanUserData() {
         context.dataStore.edit { prefs ->
+            prefs.clear()
             prefs[KEY_USER_NAME] = "Người Dùng"
             prefs[KEY_WAKEUP_TIME] = "06:30"
             prefs[KEY_ENERGY_PROFILE] = "Buổi sáng (8:00 - 11:30)"
@@ -138,6 +181,7 @@ class UserPreferencesRepository(private val context: Context) {
             prefs[KEY_COINS] = 100
             prefs[KEY_SPIN_TICKETS] = 1
             prefs[KEY_STREAK_DAYS] = 0
+            prefs[KEY_LAST_CHECKIN_DATE] = ""
             prefs[KEY_SIMULATE_CAMERA] = false
             prefs[KEY_SIMULATE_SENSORS] = false
             prefs[KEY_SIMULATE_APP_BLOCKER] = false

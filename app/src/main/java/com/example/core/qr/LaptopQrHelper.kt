@@ -36,8 +36,8 @@ object LaptopQrHelper {
     fun validateQrPayload(scannedPayload: String, secret: String): Boolean {
         val clean = scannedPayload.trim()
 
-        // 1. Static QR validation
-        if (clean == "LIFEOS_STATIC:$secret") {
+        // 1. Static QR validation (Unified & Permanent Laptop QR)
+        if (clean.equals("LIFEOS_STATIC:$secret", ignoreCase = true) || clean.equals(secret, ignoreCase = true)) {
             return true
         }
 

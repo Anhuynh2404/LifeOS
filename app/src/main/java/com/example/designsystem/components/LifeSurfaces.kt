@@ -94,7 +94,7 @@ fun LifeListItem(
         .fillMaxWidth()
         .clip(shapes.medium)
         .background(colors.surface)
-        .border(1.dp, colors.borderLight, shapes.medium)
+        .border(1.dp, colors.border, shapes.medium)
 
     val clickableMod = if (onClick != null) {
         baseMod.clickable { onClick() }

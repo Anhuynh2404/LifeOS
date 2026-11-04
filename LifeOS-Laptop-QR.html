@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeOS - Mã QR Báo Thức Laptop</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%);
+            color: #F8FAFC;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 28px;
+            padding: 36px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        h1 { font-size: 24px; font-weight: 800; margin-bottom: 6px; color: #38BDF8; }
+        p.subtitle { font-size: 14px; color: #94A3B8; margin-bottom: 20px; }
+
+        .tabs {
+            display: flex;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 14px;
+            padding: 4px;
+            margin-bottom: 22px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: none;
+            background: transparent;
+            color: #94A3B8;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .tab-btn.active {
+            background: #38BDF8;
+            color: #0F172A;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+        }
+
+        .qr-card {
+            background: #FFFFFF;
+            padding: 22px;
+            border-radius: 20px;
+            display: inline-block;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            margin-bottom: 18px;
+        }
+        #qrcode { display: flex; justify-content: center; }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 14px;
+        }
+        .badge-static {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10B981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .badge-dynamic {
+            background: rgba(56, 189, 248, 0.15);
+            color: #38BDF8;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+        }
+
+        .timer-box { margin-bottom: 18px; }
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #38BDF8;
+            width: 100%;
+            transition: width 1s linear;
+        }
+
+        .secret-box {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 13px;
+            color: #CBD5E1;
+            margin-top: 14px;
+        }
+        .secret-box input {
+            background: transparent;
+            border: 1px solid #38BDF8;
+            border-radius: 6px;
+            color: #F59E0B;
+            font-weight: bold;
+            font-size: 15px;
+            text-align: center;
+            padding: 6px 10px;
+            width: 180px;
+            outline: none;
+            margin-top: 6px;
+        }
+        .instructions {
+            font-size: 12px;
+            color: #64748B;
+            margin-top: 18px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💻 LifeOS Laptop Wake-Up</h1>
+        <p class="subtitle">Quét mã QR bằng điện thoại để tắt chuông báo thức</p>
+
+        <!-- Mode Tabs -->
+        <div class="tabs">
+            <button id="tab-static" class="tab-btn active" onclick="switchMode('STATIC')">📌 QR Cố Định (Dùng mãi mãi)</button>
+            <button id="tab-dynamic" class="tab-btn" onclick="switchMode('DYNAMIC')">🔄 QR Động (Xoay 30s)</button>
+        </div>
+
+        <div class="qr-card">
+            <div id="qrcode"></div>
+        </div>
+
+        <!-- Status & Countdown Info -->
+        <div id="static-info">
+            <div class="status-badge badge-static">
+                ✓ Mã cố định duy nhất • Không bao giờ hết hạn
+            </div>
+            <p style="font-size: 12px; color: #94A3B8;">
+                Bạn có thể lưu trang này trên laptop hoặc in mã ra dán ở bàn làm việc. Sáng mai chỉ cần quét là tắt chuông ngay!
+            </p>
+        </div>
+
+        <div id="dynamic-info" style="display: none;" class="timer-box">
+            <div class="status-badge badge-dynamic">
+                🔄 Bảo mật cao cấp • Tự đổi mỗi 30s
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; margin-top: 6px;">
+                <span>Thời gian còn lại của mã:</span>
+                <span id="countdown-text" style="color: #38BDF8;">30s</span>
+            </div>
+            <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill"></div>
+            </div>
+        </div>
+
+        <div class="secret-box">
+            Mã thiết bị của bạn (Nhập từ Cài đặt app LifeOS): <br>
+            <input type="text" id="secret-input" value="LIFEOS9999" onchange="onSecretChange()">
+        </div>
+
+        <p class="instructions">
+            💡 <strong>Mẹo:</strong> Dùng chế độ <em>QR Cố Định</em> để tiện lợi và ổn định nhất, không lo mã xoay bị lệch giờ.<br>
+            Bạn bắt buộc phải rời giường đến bàn laptop để quét mã thì mới tắt được chuông!
+        </p>
+    </div>
+
+    <script>
+        let SECRET = localStorage.getItem("lifeos_secret") || "LIFEOS9999";
+        let CURRENT_MODE = localStorage.getItem("lifeos_qr_mode") || "STATIC";
+        document.getElementById("secret-input").value = SECRET;
+        const STEP_SECONDS = 30;
+        let lastPayload = "";
+
+        function switchMode(mode) {
+            CURRENT_MODE = mode;
+            localStorage.setItem("lifeos_qr_mode", mode);
+            document.getElementById("tab-static").className = mode === 'STATIC' ? 'tab-btn active' : 'tab-btn';
+            document.getElementById("tab-dynamic").className = mode === 'DYNAMIC' ? 'tab-btn active' : 'tab-btn';
+            document.getElementById("static-info").style.display = mode === 'STATIC' ? 'block' : 'none';
+            document.getElementById("dynamic-info").style.display = mode === 'DYNAMIC' ? 'block' : 'none';
+            lastPayload = "";
+            renderQR();
+        }
+
+        function onSecretChange() {
+            SECRET = document.getElementById("secret-input").value.trim().toUpperCase();
+            localStorage.setItem("lifeos_secret", SECRET);
+            lastPayload = "";
+            renderQR();
+        }
+
+        function computeToken(data, secret) {
+            let hash = 0;
+            const combined = data + secret;
+            for (let i = 0; i < combined.length; i++) {
+                hash = ((hash << 5) - hash) + combined.charCodeAt(i);
+                hash |= 0;
+            }
+            return Math.abs(hash).toString(16).padStart(8, '0').toUpperCase().substring(0, 8);
+        }
+
+        function renderQR() {
+            let payload = "";
+            if (CURRENT_MODE === "STATIC") {
+                payload = "LIFEOS_STATIC:" + SECRET;
+            } else {
+                const nowSeconds = Math.floor(Date.now() / 1000);
+                const step = Math.floor(nowSeconds / STEP_SECONDS);
+                const remaining = STEP_SECONDS - (nowSeconds % STEP_SECONDS);
+                const token = computeToken(SECRET + ":" + step, SECRET);
+                payload = "LIFEOS_DYNAMIC:" + SECRET + ":" + step + ":" + token;
+
+                document.getElementById("countdown-text").innerText = remaining + "s";
+                document.getElementById("progress-fill").style.width = ((remaining / STEP_SECONDS) * 100) + "%";
+            }
+
+            if (payload !== lastPayload) {
+                lastPayload = payload;
+                const qrContainer = document.getElementById("qrcode");
+                qrContainer.innerHTML = "";
+                new QRCode(qrContainer, {
+                    text: payload,
+                    width: 220,
+                    height: 220,
+                    colorDark: "#0F172A",
+                    colorLight: "#FFFFFF",
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+            }
+        }
+
+        switchMode(CURRENT_MODE);
+        setInterval(() => {
+            if (CURRENT_MODE === "DYNAMIC") {
+                renderQR();
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

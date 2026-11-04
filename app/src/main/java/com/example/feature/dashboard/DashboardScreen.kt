@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -51,6 +52,7 @@ fun DashboardScreen(
     onNavigateToPermissions: () -> Unit = {},
     onNavigateToFinance: () -> Unit = {},
     onTaskChecked: (TaskEntity) -> Unit,
+    onCheckInStreak: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -156,18 +158,22 @@ fun DashboardScreen(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
+                val todayStr = remember { java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date()) }
+                val isCheckedInToday = userPrefs.lastCheckInDate == todayStr
+
                 // Stats Badges: Streak & Coins
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // Streak Pill
+                    // Streak Pill (Clickable to Check-in)
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .clip(LifeTheme.shapes.medium)
-                            .background(colors.challengesStart.copy(alpha = 0.1f))
-                            .border(1.dp, colors.challengesStart.copy(alpha = 0.2f), LifeTheme.shapes.medium)
+                            .background(if (isCheckedInToday) colors.challengesStart.copy(alpha = 0.15f) else colors.challengesStart.copy(alpha = 0.08f))
+                            .border(1.dp, if (isCheckedInToday) colors.challengesStart else colors.challengesStart.copy(alpha = 0.3f), LifeTheme.shapes.medium)
+                            .clickable { onCheckInStreak() }
                             .padding(horizontal = 12.dp, vertical = 10.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -179,15 +185,21 @@ fun DashboardScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Column {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "${userPrefs.activeStreakDays} ngày",
+                                        style = LifeTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = colors.challengesStart
+                                    )
+                                    if (isCheckedInToday) {
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("✓", color = colors.challengesStart, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                    }
+                                }
                                 Text(
-                                    text = "${userPrefs.activeStreakDays} ngày",
-                                    style = LifeTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = colors.challengesStart
-                                )
-                                Text(
-                                    text = "Chuỗi kỷ luật",
+                                    text = if (isCheckedInToday) "Đã điểm danh" else "Chạm điểm danh!",
                                     style = LifeTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                                    color = colors.textSecondary
+                                    color = if (isCheckedInToday) colors.challengesStart else colors.textSecondary
                                 )
                             }
                         }
@@ -222,6 +234,42 @@ fun DashboardScreen(
                                     color = colors.textSecondary
                                 )
                             }
+                        }
+                    }
+                }
+
+                if (!isCheckedInToday) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Surface(
+                        shape = LifeTheme.shapes.medium,
+                        color = colors.challengesStart.copy(alpha = 0.12f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, colors.challengesStart.copy(alpha = 0.35f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onCheckInStreak() }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("🔥", fontSize = 18.sp)
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Text(
+                                        "Điểm Danh Duy Trì Chuỗi Kỷ Luật",
+                                        style = LifeTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = colors.challengesStart
+                                    )
+                                    Text(
+                                        "Chạm để nhận +1 Ngày, +50 XP & +20 Xu",
+                                        style = LifeTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                                        color = colors.textSecondary
+                                    )
+                                }
+                            }
+                            LifeBadge(text = "+Điểm danh", style = LifeBadgeStyle.WARNING)
                         }
                     }
                 }

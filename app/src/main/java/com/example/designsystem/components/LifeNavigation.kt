@@ -133,7 +133,7 @@ fun LifeBottomBar(
                 .shadow(elevation = 12.dp, shape = shapes.large, spotColor = Color.Black.copy(alpha = 0.15f))
                 .clip(shapes.large)
                 .background(colors.surface.copy(alpha = if (colors.isDark) 0.95f else 0.98f))
-                .border(1.dp, colors.borderLight, shapes.large)
+                .border(1.dp, colors.border, shapes.large)
                 .padding(horizontal = 6.dp),
             contentAlignment = Alignment.Center
         ) {

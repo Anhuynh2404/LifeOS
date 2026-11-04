@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.core.ai.LifeOsAiService
@@ -53,6 +54,8 @@ fun FinanceScreen(
     onAddWallet: (WalletEntity) -> Unit,
     onDeleteWallet: (WalletEntity) -> Unit,
     onAddCategory: (CategoryEntity) -> Unit,
+    onUpdateCategory: (CategoryEntity) -> Unit = {},
+    onDeleteCategory: (CategoryEntity) -> Unit = {},
     onAddTransaction: (TransactionEntity) -> Unit,
     onAddSavingsFund: (SavingsFundEntity) -> Unit,
     onDeleteSavingsFund: (SavingsFundEntity) -> Unit,
@@ -77,6 +80,8 @@ fun FinanceScreen(
     var showAddTransactionDialog by remember { mutableStateOf(false) }
     var showAddWalletDialog by remember { mutableStateOf(false) }
     var showAddCategoryDialog by remember { mutableStateOf(false) }
+    var showManageCategoriesDialog by remember { mutableStateOf(false) }
+    var editingCategory by remember { mutableStateOf<CategoryEntity?>(null) }
     var showAddFundDialog by remember { mutableStateOf(false) }
     var showAddImpulseDialog by remember { mutableStateOf(false) }
     var showAddEditLoanDialog by remember { mutableStateOf(false) }
@@ -264,7 +269,8 @@ fun FinanceScreen(
                                         items(wallets) { w ->
                                             Surface(
                                                 shape = LifeTheme.shapes.medium,
-                                                color = Color.White.copy(alpha = 0.2f)
+                                                color = Color.White.copy(alpha = 0.2f),
+                                                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.35f))
                                             ) {
                                                 Column(modifier = Modifier.padding(10.dp)) {
                                                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -293,16 +299,113 @@ fun FinanceScreen(
 
                         // Categories quick bar
                         item {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                            LifeCard(
+                                variant = LifeCardVariant.SURFACE,
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text("Danh Mục Thu Chi (${categories.size})", fontWeight = FontWeight.Bold, style = LifeTheme.typography.titleMedium)
-                                TextButton(onClick = { showAddCategoryDialog = true }) {
-                                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp), tint = LifeTheme.colors.financeStart)
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Tạo Danh Mục", color = LifeTheme.colors.financeStart, style = LifeTheme.typography.labelSmall)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            "Danh Mục Thu Chi",
+                                            fontWeight = FontWeight.Bold,
+                                            style = LifeTheme.typography.titleMedium,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            "${categories.size} danh mục",
+                                            style = LifeTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Surface(
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = LifeTheme.colors.brandPrimary.copy(alpha = 0.12f),
+                                            modifier = Modifier.clickable { showManageCategoriesDialog = true }
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Tune,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(14.dp),
+                                                    tint = LifeTheme.colors.brandPrimary
+                                                )
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text(
+                                                    "Quản Lý",
+                                                    color = LifeTheme.colors.brandPrimary,
+                                                    style = LifeTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold)
+                                                )
+                                            }
+                                        }
+                                        Surface(
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = LifeTheme.colors.financeStart.copy(alpha = 0.12f),
+                                            modifier = Modifier.clickable { showAddCategoryDialog = true }
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Add,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(14.dp),
+                                                    tint = LifeTheme.colors.financeStart
+                                                )
+                                                Spacer(modifier = Modifier.width(3.dp))
+                                                Text(
+                                                    "Thêm",
+                                                    color = LifeTheme.colors.financeStart,
+                                                    style = LifeTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                                if (categories.isNotEmpty()) {
+                                    Spacer(modifier = Modifier.height(10.dp))
+                                    LazyRow(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        items(categories) { cat ->
+                                            Surface(
+                                                shape = RoundedCornerShape(8.dp),
+                                                color = if (cat.type == "EXPENSE") LifeTheme.colors.error.copy(alpha = 0.12f) else LifeTheme.colors.success.copy(alpha = 0.12f),
+                                                border = androidx.compose.foundation.BorderStroke(
+                                                    1.dp,
+                                                    if (cat.type == "EXPENSE") LifeTheme.colors.error.copy(alpha = 0.3f) else LifeTheme.colors.success.copy(alpha = 0.3f)
+                                                ),
+                                                modifier = Modifier.clickable { editingCategory = cat }
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Text(if (cat.type == "EXPENSE") "🔻" else "🔺", fontSize = 11.sp)
+                                                    Spacer(modifier = Modifier.width(4.dp))
+                                                    Text(
+                                                        cat.name,
+                                                        style = LifeTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                                                        color = if (cat.type == "EXPENSE") LifeTheme.colors.error else LifeTheme.colors.success
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -1054,6 +1157,38 @@ fun FinanceScreen(
             )
         }
 
+        if (showManageCategoriesDialog) {
+            ManageCategoriesDialog(
+                categories = categories,
+                onDismiss = { showManageCategoriesDialog = false },
+                onAddNew = {
+                    showManageCategoriesDialog = false
+                    showAddCategoryDialog = true
+                },
+                onEditCategory = { cat ->
+                    editingCategory = cat
+                },
+                onDeleteCategory = { cat ->
+                    onDeleteCategory(cat)
+                }
+            )
+        }
+
+        editingCategory?.let { cat ->
+            EditCategoryDialog(
+                category = cat,
+                onDismiss = { editingCategory = null },
+                onConfirm = { updated ->
+                    onUpdateCategory(updated)
+                    editingCategory = null
+                },
+                onDelete = {
+                    onDeleteCategory(cat)
+                    editingCategory = null
+                }
+            )
+        }
+
         if (showAddFundDialog) {
             AddSavingsFundDialog(
                 onDismiss = { showAddFundDialog = false },
@@ -1427,6 +1562,195 @@ fun AddCategoryDialog(
                 selectedIndex = if (type == "EXPENSE") 0 else 1,
                 onItemSelected = { idx -> type = if (idx == 0) "EXPENSE" else "INCOME" }
             )
+        }
+    }
+}
+
+@Composable
+fun ManageCategoriesDialog(
+    categories: List<CategoryEntity>,
+    onDismiss: () -> Unit,
+    onAddNew: () -> Unit,
+    onEditCategory: (CategoryEntity) -> Unit,
+    onDeleteCategory: (CategoryEntity) -> Unit
+) {
+    var filterType by remember { mutableStateOf("ALL") } // "ALL", "EXPENSE", "INCOME"
+
+    val filtered = remember(categories, filterType) {
+        when (filterType) {
+            "EXPENSE" -> categories.filter { it.type == "EXPENSE" }
+            "INCOME" -> categories.filter { it.type == "INCOME" }
+            else -> categories
+        }
+    }
+
+    LifeDialog(
+        title = "Quản Lý Danh Mục Thu/Chi",
+        icon = { Icon(Icons.Default.Tune, contentDescription = null, tint = LifeTheme.colors.brandPrimary) },
+        onDismissRequest = onDismiss,
+        confirmButtonText = "+ Thêm Mới",
+        onConfirm = onAddNew,
+        dismissButtonText = "Đóng",
+        onDismiss = onDismiss
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            LifeSegmentedControl(
+                items = listOf("Tất cả (${categories.size})", "Chi tiêu", "Thu nhập"),
+                selectedIndex = when (filterType) {
+                    "EXPENSE" -> 1
+                    "INCOME" -> 2
+                    else -> 0
+                },
+                onItemSelected = { idx ->
+                    filterType = when (idx) {
+                        1 -> "EXPENSE"
+                        2 -> "INCOME"
+                        else -> "ALL"
+                    }
+                }
+            )
+
+            if (filtered.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "Chưa có danh mục nào trong nhóm này.",
+                        style = LifeTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 280.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    items(filtered, key = { it.id }) { cat ->
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .clip(CircleShape)
+                                            .background(
+                                                if (cat.type == "EXPENSE") LifeTheme.colors.error.copy(alpha = 0.15f)
+                                                else LifeTheme.colors.success.copy(alpha = 0.15f)
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            if (cat.type == "EXPENSE") "🔻" else "🔺",
+                                            fontSize = 12.sp
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column {
+                                        Text(
+                                            cat.name,
+                                            style = LifeTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        Text(
+                                            if (cat.type == "EXPENSE") "Khoản Chi" else "Khoản Thu",
+                                            style = LifeTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                            color = if (cat.type == "EXPENSE") LifeTheme.colors.error else LifeTheme.colors.success
+                                        )
+                                    }
+                                }
+
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    IconButton(
+                                        onClick = { onEditCategory(cat) },
+                                        modifier = Modifier.size(32.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Edit,
+                                            contentDescription = "Sửa",
+                                            tint = LifeTheme.colors.brandPrimary,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                    IconButton(
+                                        onClick = { onDeleteCategory(cat) },
+                                        modifier = Modifier.size(32.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.DeleteOutline,
+                                            contentDescription = "Xóa",
+                                            tint = LifeTheme.colors.error,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun EditCategoryDialog(
+    category: CategoryEntity,
+    onDismiss: () -> Unit,
+    onConfirm: (CategoryEntity) -> Unit,
+    onDelete: () -> Unit
+) {
+    var name by remember { mutableStateOf(category.name) }
+    var type by remember { mutableStateOf(category.type) }
+
+    LifeDialog(
+        title = "Chỉnh Sửa Danh Mục",
+        icon = { Icon(Icons.Default.Edit, contentDescription = null, tint = LifeTheme.colors.brandPrimary) },
+        onDismissRequest = onDismiss,
+        confirmButtonText = "Lưu Thay Đổi",
+        onConfirm = {
+            if (name.isNotBlank()) {
+                onConfirm(category.copy(name = name.trim(), type = type))
+            }
+        },
+        dismissButtonText = "Hủy",
+        onDismiss = onDismiss
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            LifeTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = "Tên danh mục"
+            )
+            LifeSegmentedControl(
+                items = listOf("Chi Tiêu", "Thu Nhập"),
+                selectedIndex = if (type == "EXPENSE") 0 else 1,
+                onItemSelected = { idx -> type = if (idx == 0) "EXPENSE" else "INCOME" }
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            OutlinedButton(
+                onClick = onDelete,
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = LifeTheme.colors.error),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.DeleteOutline, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("Xóa danh mục này")
+            }
         }
     }
 }

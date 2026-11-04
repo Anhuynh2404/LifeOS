@@ -82,6 +82,7 @@
                 <action android:name="com.example.lifeos.ACTION_DEBT_PAID" />
                 <action android:name="com.example.lifeos.ACTION_SNOOZE_10MIN" />
                 <action android:name="com.example.lifeos.ACTION_TASK_COMPLETE" />
+                <action android:name="com.example.lifeos.ACTION_CHECKIN_STREAK" />
             </intent-filter>
         </receiver>
 
@@ -106,6 +107,15 @@
             android:name=".service.FocusService"
             android:foregroundServiceType="mediaPlayback"
             android:exported="false" />
+
+        <service
+            android:name=".service.PersistentStatusService"
+            android:foregroundServiceType="specialUse"
+            android:exported="false">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Persistent system status monitor for alarms, streak, and daily tasks" />
+        </service>
 
         <!-- Distraction Blocker Accessibility Service -->
         <service

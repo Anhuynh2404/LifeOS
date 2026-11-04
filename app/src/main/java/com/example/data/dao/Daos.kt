@@ -219,6 +219,9 @@ interface FinanceDao {
     @Delete
     suspend fun deleteCategory(cat: CategoryEntity)
 
+    @Update
+    suspend fun updateCategory(cat: CategoryEntity)
+
     @Delete
     suspend fun deleteWallet(wallet: WalletEntity)
 

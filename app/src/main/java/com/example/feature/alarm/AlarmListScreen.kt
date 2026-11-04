@@ -21,6 +21,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import com.example.core.audio.ToneGenerator
 import com.example.core.util.Formatters
 import com.example.data.entity.AlarmEntity
 import com.example.designsystem.components.*
@@ -227,19 +232,51 @@ fun AddAlarmDialog(
     onDismiss: () -> Unit,
     onConfirm: (AlarmEntity) -> Unit
 ) {
+    val context = LocalContext.current
     var title by remember { mutableStateOf("Báo thức mục tiêu") }
     var hour by remember { mutableIntStateOf(6) }
     var minute by remember { mutableIntStateOf(30) }
     var selectedMission by remember { mutableStateOf("MATH") }
+    var selectedRingtone by remember { mutableStateOf("Giai điệu Bình Minh") }
+    var isPreviewingTone by remember { mutableStateOf(false) }
     var smartWake by remember { mutableStateOf(true) }
     val colors = LifeTheme.colors
 
+    val audioPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            val fileName = uri.lastPathSegment?.substringAfterLast('/')?.substringAfterLast(':') ?: "Nhạc chuông tùy chọn"
+            selectedRingtone = "custom:$uri|$fileName"
+            ToneGenerator.stop()
+            isPreviewingTone = false
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            ToneGenerator.stop()
+        }
+    }
+
+    val displayRingtoneName = remember(selectedRingtone) {
+        if (selectedRingtone.startsWith("custom:")) {
+            selectedRingtone.substringAfter('|')
+        } else {
+            selectedRingtone
+        }
+    }
+
     LifeDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = {
+            ToneGenerator.stop()
+            onDismiss()
+        },
         title = "Tạo Báo Thức Mới",
         icon = { Icon(Icons.Default.Alarm, contentDescription = null, tint = colors.alarmEnd) },
         confirmButtonText = "Lưu Báo Thức",
         onConfirm = {
+            ToneGenerator.stop()
             onConfirm(
                 AlarmEntity(
                     title = title.ifBlank { "Báo thức" },
@@ -248,12 +285,16 @@ fun AddAlarmDialog(
                     daysOfWeek = "1,2,3,4,5",
                     isEnabled = true,
                     missionType = selectedMission,
+                    ringtoneName = selectedRingtone,
                     isSmartWakeEnabled = smartWake
                 )
             )
         },
         dismissButtonText = "Hủy",
-        onDismiss = onDismiss
+        onDismiss = {
+            ToneGenerator.stop()
+            onDismiss()
+        }
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             LifeTextField(
@@ -275,7 +316,6 @@ fun AddAlarmDialog(
                 }
             )
 
-
             Text("Nhiệm vụ tắt chuông:", style = LifeTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = colors.textPrimary)
             val missions = listOf(
                 "MATH" to "Giải toán",
@@ -295,23 +335,81 @@ fun AddAlarmDialog(
             }
 
             if (selectedMission == "LAPTOP_QR") {
-                val context = androidx.compose.ui.platform.LocalContext.current
                 val secret = remember { com.example.core.qr.LaptopQrHelper.getOrCreateDeviceSecret(context) }
                 LifeCard(
                     variant = LifeCardVariant.SURFACE,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(10.dp)) {
-                        Text("💻 Hướng Dẫn QR Laptop", style = LifeTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = colors.brandPrimary)
+                        Text("💻 Quét Mã QR Laptop", style = LifeTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = colors.brandPrimary)
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            "Mở file LifeOS-Laptop-QR.html trên trình duyệt laptop và đảm bảo mã thiết bị là: $secret. Mã QR sẽ tự xoay vòng mỗi 30s.",
+                            "Mở file LifeOS-Laptop-QR.html trên laptop. Bạn có thể chọn chế độ '📌 QR Cố Định' để quét duy nhất 1 mã vĩnh viễn không bao giờ hết hạn!",
                             style = LifeTheme.typography.bodySmall,
                             color = colors.textSecondary
                         )
                     }
                 }
             }
+
+            // Ringtone section
+            Text("Nhạc chuông báo thức:", style = LifeTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = colors.textPrimary)
+            val presetTones = listOf(
+                "Giai điệu Bình Minh",
+                "Hùng Tráng Kỷ Luật",
+                "Chuông Báo Động Quân Đội",
+                "Tiếng Chim Hót Thiên Nhiên",
+                "Nhạc chuông mặc định máy"
+            )
+            androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                items(presetTones) { tone ->
+                    LifeChip(
+                        text = tone,
+                        selected = selectedRingtone == tone,
+                        onClick = {
+                            selectedRingtone = tone
+                            ToneGenerator.stop()
+                            isPreviewingTone = false
+                        }
+                    )
+                }
+            }
+
+            // Custom phone audio picker and preview button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                LifeButton(
+                    text = "📁 Tải nhạc từ máy",
+                    onClick = { audioPickerLauncher.launch("audio/*") },
+                    variant = LifeButtonVariant.OUTLINE,
+                    size = LifeButtonSize.SMALL,
+                    leadingIcon = { Icon(Icons.Default.AudioFile, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                )
+
+                LifeButton(
+                    text = if (isPreviewingTone) "⏹ Dừng" else "▶ Nghe thử",
+                    onClick = {
+                        if (isPreviewingTone) {
+                            ToneGenerator.stop()
+                            isPreviewingTone = false
+                        } else {
+                            ToneGenerator.playAlarmWithRingtone(context, selectedRingtone, onLoop = false)
+                            isPreviewingTone = true
+                        }
+                    },
+                    variant = if (isPreviewingTone) LifeButtonVariant.SECONDARY else LifeButtonVariant.PRIMARY,
+                    size = LifeButtonSize.SMALL
+                )
+            }
+
+            Text(
+                text = "Đang chọn: $displayRingtoneName",
+                style = LifeTheme.typography.bodySmall,
+                color = colors.brandPrimary
+            )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
